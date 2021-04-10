@@ -14,5 +14,4 @@ require (
 	github.com/xtaci/lossyconn v0.0.0-20190602105132-8df528c0c9ae // indirect
 	google.golang.org/grpc v1.33.2
 	google.golang.org/grpc/examples v0.0.0-20200424191127-a3cc4f613d6d
-	google.golang.org/protobuf v1.25.0
 )
