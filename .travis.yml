@@ -4,13 +4,13 @@ go:
   - 1.16.x
 
 env:
-  - GO111MODULE=on
   - GOSUMDB=off
 
 before_script:
   - rm -f go.sum
   - go get -v github.com/rpcxio/rpcxplus/...
   - go get github.com/mattn/goveralls
+  - go mod download
 
 script:
   - go test -v ./...
