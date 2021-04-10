@@ -17,6 +17,7 @@ import (
 	"github.com/smallnest/rpcx/share"
 )
 
+// Errors for grpc client.
 var (
 	ErrNotSupported              = errors.New("feature not supported")
 	ErrClientNotRegistered       = errors.New("grpc client not registered")
@@ -26,6 +27,7 @@ var (
 	ErrGrpcReplyCannotSet        = errors.New("grpc reply can not be set")
 )
 
+// GrpcClientPlugin is used for managing rpcx clients for grpc protocol.
 type GrpcClientPlugin struct {
 	clientMapMu    sync.RWMutex
 	clientMap      map[string]*GrpcClient
@@ -33,6 +35,7 @@ type GrpcClientPlugin struct {
 	clientBuilders map[string]func(string) interface{}
 }
 
+// NewGrpcClientPlugin creates a new GrpcClientPlugin.
 func NewGrpcClientPlugin() *GrpcClientPlugin {
 	return &GrpcClientPlugin{
 		clientMap:      make(map[string]*GrpcClient),
@@ -41,16 +44,19 @@ func NewGrpcClientPlugin() *GrpcClientPlugin {
 	}
 }
 
+// SetCachedClient sets the cache client.
 func (c *GrpcClientPlugin) SetCachedClient(client client.RPCClient, k, servicePath, serviceMethod string) {
 
 }
 
+// FindCachedClient gets a cached client if exist.
 func (c *GrpcClientPlugin) FindCachedClient(k, servicePath, serviceMethod string) client.RPCClient {
 	c.clientMapMu.RLock()
 	defer c.clientMapMu.RUnlock()
 	return c.clientMap[servicePath]
 }
 
+// DeleteCachedClient deletes an exited client.
 func (c *GrpcClientPlugin) DeleteCachedClient(client client.RPCClient, k, servicePath, serviceMethod string) {
 	c.clientMapMu.Lock()
 	defer c.clientMapMu.Unlock()
@@ -69,6 +75,7 @@ func (c *GrpcClientPlugin) DeleteCachedClient(client client.RPCClient, k, servic
 	}
 }
 
+// GenerateClient generates an new grpc client.
 func (c *GrpcClientPlugin) GenerateClient(k, servicePath, serviceMethod string) (client client.RPCClient, err error) {
 	_, addr := splitNetworkAndAddress(k)
 
@@ -79,8 +86,7 @@ func (c *GrpcClientPlugin) GenerateClient(k, servicePath, serviceMethod string) 
 
 	rcvr := builder(addr)
 	c.clientConnMap[servicePath] = rcvr
-	_, err = c.register(rcvr, servicePath)
-
+	_, err = c.register(rcvr, addr, servicePath)
 	return c.clientMap[servicePath], err
 }
 
@@ -107,6 +113,7 @@ func isExportedOrBuiltinType(t reflect.Type) bool {
 	return isExported(t.Name()) || t.PkgPath() == ""
 }
 
+// Register adds grpc clients into rpcx client.
 func (c *GrpcClientPlugin) Register(servicePath string, builder func(string) interface{}) {
 	c.clientMapMu.Lock()
 	defer c.clientMapMu.Unlock()
@@ -114,7 +121,7 @@ func (c *GrpcClientPlugin) Register(servicePath string, builder func(string) int
 	c.clientBuilders[servicePath] = builder
 }
 
-func (c *GrpcClientPlugin) register(rcvr interface{}, name string) (string, error) {
+func (c *GrpcClientPlugin) register(rcvr interface{}, addr, name string) (string, error) {
 	c.clientMapMu.Lock()
 	defer c.clientMapMu.Unlock()
 
@@ -148,7 +155,7 @@ func (c *GrpcClientPlugin) register(rcvr interface{}, name string) (string, erro
 		return sname, errors.New(errorStr)
 	}
 
-	c.clientMap[gc.name] = &GrpcClient{client: gc}
+	c.clientMap[gc.name] = &GrpcClient{client: gc, remoteAddr: addr}
 	return sname, nil
 }
 
@@ -218,14 +225,19 @@ func suitableMethods(typ reflect.Type, reportErr bool) map[string]*methodType {
 	return methods
 }
 
+// GrpcClient is a grpc client wrapper and implements RPCClient interface.
 type GrpcClient struct {
-	client *grpcClient // client wrapper
-	closed bool
+	client     *grpcClient // client wrapper
+	remoteAddr string
+	closed     bool
 }
 
+// Connect connects the server.
 func (c *GrpcClient) Connect(network, address string) error {
 	return ErrNotSupported
 }
+
+// Go calls the grpc servics asynchronizously.
 func (c *GrpcClient) Go(ctx context.Context, servicePath, serviceMethod string, args interface{}, reply interface{}, done chan *client.Call) *client.Call {
 	if done == nil {
 		done = make(chan *client.Call, 10)
@@ -255,6 +267,8 @@ func (c *GrpcClient) Go(ctx context.Context, servicePath, serviceMethod string, 
 
 	return call
 }
+
+// Call invoke the grpc sevice.
 func (c *GrpcClient) Call(ctx context.Context, servicePath, serviceMethod string, argv interface{}, reply interface{}) error {
 	gc := c.client
 	if gc == nil {
@@ -295,32 +309,45 @@ func (c *GrpcClient) Call(ctx context.Context, servicePath, serviceMethod string
 	return nil
 }
 
+// SendRaw sends raw data.
 func (c *GrpcClient) SendRaw(ctx context.Context, r *protocol.Message) (map[string]string, []byte, error) {
 	return nil, nil, ErrNotSupported
 }
+
+// Close record this client closed.
 func (c *GrpcClient) Close() error {
 	c.closed = true
 	return nil
 	//return c.clientConn.Close()
 }
+
+// RemoteAddr returns the remote address.
 func (c *GrpcClient) RemoteAddr() string {
-	// return c.clientConn.Target()
-	return ""
+	return c.remoteAddr
 }
 
+// RegisterServerMessageChan register stream chan.
 func (c *GrpcClient) RegisterServerMessageChan(ch chan<- *protocol.Message) {
 	// not supported
 }
+
+// UnregisterServerMessageChan unregister stream chan.
 func (c *GrpcClient) UnregisterServerMessageChan() {
 	// not supported
 }
 
+// IsClosing return closed or not.
 func (c *GrpcClient) IsClosing() bool {
 	return c.closed
 }
+
+// IsShutdown return closed or not.
 func (c *GrpcClient) IsShutdown() bool {
 	return c.closed
 }
+
+// GetConn returns underlying net.Conn.
+// Always returns nil.
 func (c *GrpcClient) GetConn() net.Conn {
 	return nil
 }

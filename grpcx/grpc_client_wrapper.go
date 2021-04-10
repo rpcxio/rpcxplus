@@ -10,6 +10,7 @@ import (
 	"github.com/smallnest/rpcx/log"
 )
 
+// PbMessage defines proto buffer Message interface.
 type PbMessage interface {
 	ProtoMessage()
 }

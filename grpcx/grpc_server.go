@@ -38,6 +38,7 @@ func (s *GrpcServerPlugin) RegisterService(registerFunc func(grpcServer *grpc.Se
 	registerFunc(s.grpcServer)
 }
 
+// Start stats the grpc server.
 func (s *GrpcServerPlugin) Start() error {
 	for {
 		if s.closed {
