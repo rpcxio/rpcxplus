@@ -7,7 +7,7 @@ require (
 	github.com/buger/jsonparser v0.0.0-20191004114745-ee4c978eae7e // indirect
 	github.com/grandcat/zeroconf v0.0.0-20190424104450-85eadb44205c // indirect
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
-	github.com/smallnest/rpcx v1.6.3-0.20210410005117-192b4683b298
+	github.com/smallnest/rpcx v1.6.3-0.20210410064820-27256cdf7ea9
 	github.com/soheilhy/cmux v0.1.4
 	github.com/stretchr/testify v1.6.1
 	github.com/valyala/fastrand v1.0.0 // indirect
@@ -15,4 +15,4 @@ require (
 	google.golang.org/grpc v1.33.2
 	google.golang.org/grpc/examples v0.0.0-20200424191127-a3cc4f613d6d
 	google.golang.org/protobuf v1.25.0
-) 
+)

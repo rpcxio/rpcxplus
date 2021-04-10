@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/smallnest/rpcx/client"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/examples/helloworld/helloworld"
@@ -24,6 +25,7 @@ func TestGrpcClientPlugin(t *testing.T) {
 	go s.Serve(lis)
 	time.Sleep(time.Second)
 
+	//
 	// grpc client visits
 	conn, err := grpc.Dial(lis.Addr().String(), grpc.WithInsecure(), grpc.WithTimeout(time.Second))
 	assert.NoError(t, err)
@@ -37,7 +39,8 @@ func TestGrpcClientPlugin(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "hello smallnest", r.Message)
 
-	// rpcx client
+	//
+	// grpcx client
 	gcp := NewGrpcClientPlugin()
 	gcp.Register("GreeterService", func(addr string) interface{} {
 		conn, err := grpc.Dial(addr, grpc.WithInsecure())
@@ -58,7 +61,22 @@ func TestGrpcClientPlugin(t *testing.T) {
 	var reply = &helloworld.HelloReply{}
 	err = rpcxClient.Call(context.Background(), "GreeterService", "SayHello", argv, reply)
 	assert.NoError(t, err)
-
 	assert.Equal(t, "hello smallnest", reply.Message)
 
+	//
+	// rpcx client
+	client.RegisterCacheClientBuilder("grpc", gcp)
+
+	d, _ := client.NewPeer2PeerDiscovery("grpc@"+lis.Addr().String(), "")
+	opt := client.DefaultOption
+	xclient := client.NewXClient("GreeterService", client.Failtry, client.RandomSelect, d, opt)
+	defer xclient.Close()
+
+	argv = &helloworld.HelloRequest{
+		Name: "smallnest",
+	}
+	reply = &helloworld.HelloReply{}
+	err = xclient.Call(context.Background(), "SayHello", argv, reply)
+	assert.NoError(t, err)
+	assert.Equal(t, "hello smallnest", reply.Message)
 }
