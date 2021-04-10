@@ -9,7 +9,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-type GrpcServer struct {
+// GrpcServerPlugin supports grpc services.
+type GrpcServerPlugin struct {
 	mu         sync.RWMutex
 	l          net.Listener
 	grpcServer *grpc.Server
@@ -17,15 +18,15 @@ type GrpcServer struct {
 	closed bool
 }
 
-// NewGrpcServer creates a new grpc server.
-func NewGrpcServer() *GrpcServer {
-	s := &GrpcServer{}
+// NewGrpcServerPlugin creates a new grpc server.
+func NewGrpcServerPlugin() *GrpcServerPlugin {
+	s := &GrpcServerPlugin{}
 	s.grpcServer = grpc.NewServer()
 	return s
 }
 
 // MuxMatch splits grpc Listener.
-func (s *GrpcServer) MuxMatch(m cmux.CMux) {
+func (s *GrpcServerPlugin) MuxMatch(m cmux.CMux) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -33,11 +34,11 @@ func (s *GrpcServer) MuxMatch(m cmux.CMux) {
 }
 
 // RegisterService registers grpc service by this method.
-func (s *GrpcServer) RegisterService(registerFunc func(grpcServer *grpc.Server)) {
+func (s *GrpcServerPlugin) RegisterService(registerFunc func(grpcServer *grpc.Server)) {
 	registerFunc(s.grpcServer)
 }
 
-func (s *GrpcServer) Start() error {
+func (s *GrpcServerPlugin) Start() error {
 	for {
 		if s.closed {
 			return nil
@@ -63,7 +64,7 @@ func (s *GrpcServer) Start() error {
 }
 
 // Close closes the grpc server.
-func (s *GrpcServer) Close() error {
+func (s *GrpcServerPlugin) Close() error {
 	s.grpcServer.Stop()
 	s.closed = true
 	return s.l.Close()

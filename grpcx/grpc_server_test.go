@@ -2,6 +2,7 @@ package grpcx
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ type GreeterService struct {
 }
 
 func (*GreeterService) SayHello(ctx context.Context, req *helloworld.HelloRequest) (*helloworld.HelloReply, error) {
+	fmt.Println("server received:", req.Name)
 	reply := &helloworld.HelloReply{Message: "hello " + req.GetName()}
 	return reply, nil
 }
@@ -25,11 +27,11 @@ func (*GreeterService) Greet(ctx context.Context, req *helloworld.HelloRequest, 
 	return nil
 }
 
-func TestGrpcServer(t *testing.T) {
+func TestGrpcServerPlugin(t *testing.T) {
 	// create rpcx server and grpc server,
 	// and add grpc server into rpcx's plugins.
 	s := server.NewServer()
-	gs := NewGrpcServer()
+	gs := NewGrpcServerPlugin()
 	s.Plugins.Add(gs)
 
 	greetService := &GreeterService{}
