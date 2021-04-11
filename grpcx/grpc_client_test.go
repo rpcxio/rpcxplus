@@ -3,7 +3,6 @@ package grpcx
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"testing"
 	"time"
@@ -14,7 +13,7 @@ import (
 	"google.golang.org/grpc/examples/helloworld/helloworld"
 )
 
-func TestGrpcClientPlugin(t *testing.T) {
+func TestGrpcClientPlugin_GrpcClient(t *testing.T) {
 	lis, err := net.Listen("tcp", ":0")
 	assert.NoError(t, err)
 	defer lis.Close()
@@ -38,20 +37,23 @@ func TestGrpcClientPlugin(t *testing.T) {
 	r, err := c.SayHello(ctx, &helloworld.HelloRequest{Name: "smallnest"})
 	assert.NoError(t, err)
 	assert.Equal(t, "hello smallnest", r.Message)
+}
 
-	//
+func TestGrpcClientPlugin_GrpcxClient(t *testing.T) {
+	lis, err := net.Listen("tcp", ":0")
+	assert.NoError(t, err)
+	defer lis.Close()
+
+	s := grpc.NewServer()
+	helloworld.RegisterGreeterServer(s, &GreeterService{})
+
+	go s.Serve(lis)
+	time.Sleep(time.Second)
+
 	// grpcx client
-	gcp := NewGrpcClientPlugin()
-	gcp.Register("GreeterService", func(addr string) interface{} {
-		conn, err := grpc.Dial(addr, grpc.WithInsecure())
-		if err != nil {
-			log.Fatalf("faild to connect: %v", err)
-		}
+	gcp := NewGrpcClientPlugin([]grpc.DialOption{grpc.WithInsecure()}, nil)
 
-		return helloworld.NewGreeterClient(conn)
-	})
-
-	rpcxClient, err := gcp.GenerateClient(fmt.Sprintf("grpc@%s", lis.Addr().String()), "GreeterService", "SayHello")
+	rpcxClient, err := gcp.GenerateClient(fmt.Sprintf("grpc@%s", lis.Addr().String()), "helloworld.Greeter", "SayHello")
 	assert.NoError(t, err)
 	assert.NotNil(t, rpcxClient)
 
@@ -59,23 +61,36 @@ func TestGrpcClientPlugin(t *testing.T) {
 		Name: "smallnest",
 	}
 	var reply = &helloworld.HelloReply{}
-	err = rpcxClient.Call(context.Background(), "GreeterService", "SayHello", argv, reply)
+	err = rpcxClient.Call(context.Background(), "helloworld.Greeter", "SayHello", argv, reply)
 	assert.NoError(t, err)
 	assert.Equal(t, "hello smallnest", reply.Message)
+}
 
-	//
-	// rpcx client
+func TestGrpcClientPlugin_XClient(t *testing.T) {
+	lis, err := net.Listen("tcp", ":0")
+	assert.NoError(t, err)
+	defer lis.Close()
+
+	s := grpc.NewServer()
+	helloworld.RegisterGreeterServer(s, &GreeterService{})
+
+	go s.Serve(lis)
+	time.Sleep(time.Second)
+
+	// register CacheClientBuilder
+	gcp := NewGrpcClientPlugin([]grpc.DialOption{grpc.WithInsecure()}, nil)
 	client.RegisterCacheClientBuilder("grpc", gcp)
 
+	// rpcx client
 	d, _ := client.NewPeer2PeerDiscovery("grpc@"+lis.Addr().String(), "")
 	opt := client.DefaultOption
-	xclient := client.NewXClient("GreeterService", client.Failtry, client.RandomSelect, d, opt)
+	xclient := client.NewXClient("helloworld.Greeter", client.Failtry, client.RandomSelect, d, opt)
 	defer xclient.Close()
 
-	argv = &helloworld.HelloRequest{
+	argv := &helloworld.HelloRequest{
 		Name: "smallnest",
 	}
-	reply = &helloworld.HelloReply{}
+	reply := &helloworld.HelloReply{}
 	err = xclient.Call(context.Background(), "SayHello", argv, reply)
 	assert.NoError(t, err)
 	assert.Equal(t, "hello smallnest", reply.Message)

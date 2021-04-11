@@ -2,7 +2,6 @@ package grpcx
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -17,7 +16,6 @@ type GreeterService struct {
 }
 
 func (*GreeterService) SayHello(ctx context.Context, req *helloworld.HelloRequest) (*helloworld.HelloReply, error) {
-	fmt.Println("server received:", req.Name)
 	reply := &helloworld.HelloReply{Message: "hello " + req.GetName()}
 	return reply, nil
 }

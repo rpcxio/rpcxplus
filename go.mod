@@ -7,7 +7,7 @@ require (
 	github.com/buger/jsonparser v0.0.0-20191004114745-ee4c978eae7e // indirect
 	github.com/grandcat/zeroconf v0.0.0-20190424104450-85eadb44205c // indirect
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
-	github.com/smallnest/rpcx v1.6.3-0.20210410075740-61b15a1a2d1f
+	github.com/smallnest/rpcx v1.6.3-0.20210411040214-03408e67d0e4
 	github.com/soheilhy/cmux v0.1.4
 	github.com/stretchr/testify v1.6.1
 	github.com/valyala/fastrand v1.0.0 // indirect
