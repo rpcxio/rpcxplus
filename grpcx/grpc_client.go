@@ -104,6 +104,7 @@ type GrpcClient struct {
 }
 
 // Connect connects the server.
+// not supported because the grpc.ClientConn has connected in case of init.
 func (c *GrpcClient) Connect(network, address string) error {
 	return ErrNotSupported
 }
@@ -151,6 +152,7 @@ func (c *GrpcClient) Call(ctx context.Context, servicePath, serviceMethod string
 }
 
 // SendRaw sends raw data.
+// not supported.
 func (c *GrpcClient) SendRaw(ctx context.Context, r *protocol.Message) (map[string]string, []byte, error) {
 	return nil, nil, ErrNotSupported
 }
@@ -158,8 +160,7 @@ func (c *GrpcClient) SendRaw(ctx context.Context, r *protocol.Message) (map[stri
 // Close record this client closed.
 func (c *GrpcClient) Close() error {
 	c.closed = true
-	return nil
-	//return c.clientConn.Close()
+	return c.client.Close()
 }
 
 // RemoteAddr returns the remote address.
@@ -168,11 +169,13 @@ func (c *GrpcClient) RemoteAddr() string {
 }
 
 // RegisterServerMessageChan register stream chan.
+// not supported.
 func (c *GrpcClient) RegisterServerMessageChan(ch chan<- *protocol.Message) {
 	// not supported
 }
 
 // UnregisterServerMessageChan unregister stream chan.
+// not supported.
 func (c *GrpcClient) UnregisterServerMessageChan() {
 	// not supported
 }
@@ -188,7 +191,7 @@ func (c *GrpcClient) IsShutdown() bool {
 }
 
 // GetConn returns underlying net.Conn.
-// Always returns nil.
+// Always returns nil because grpc.ClientConn has not implement net.Conn.
 func (c *GrpcClient) GetConn() net.Conn {
 	return nil
 }
